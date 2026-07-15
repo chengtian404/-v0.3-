@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .warehouse-title { max-width:420px; font-weight:650; color:#26343d; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .deep-yes { color:#059669; font-weight:650; }.deep-no { color:#94a3b8; }
+    .detail-grid { padding:20px; display:grid; grid-template-columns:110px 1fr; gap:12px; font-size:13px; }
+    .detail-grid dt { color:#81909a; }.detail-grid dd { margin:0; color:#25323b; word-break:break-word; }
+    .placeholder-panel { padding:26px; text-align:center; color:#71808b; }
+    .placeholder-panel i { display:block; font-size:34px; color:#0d9488; margin-bottom:12px; }
+</style>
+{% end %}
+
+{% block body %}
+<div class="layui-layout layui-layout-admin admin-shell">
+    <div class="layui-header"><div class="layui-logo">DataFinderAgentOS</div><div class="header-right"><span class="username">{{ username }}</span><form method="post" action="/admin/logout" style="display:inline;">{% module xsrf_form_html() %}<button class="layui-btn layui-btn-sm layui-btn-primary" type="submit">退出</button></form></div></div>
+    <div class="layui-side"><div class="layui-side-scroll">{% include "_navigation.html" %}</div></div>
+    <main class="layui-body fade-in"><div class="admin-breadcrumb"><a href="/admin">首页</a> / 数据仓库</div><section class="admin-panel">
+        <div class="admin-toolbar"><div><h1 class="admin-page-title">数据仓库</h1><div class="admin-page-subtitle">瞭望采集结果的持久化中心，共 {{ total }} 条</div></div><div class="admin-toolbar-group"><form method="get"><input class="admin-input" name="search" value="{{ search }}" placeholder="搜索标题、摘要、来源"><button class="layui-btn layui-btn-sm layui-btn-primary">搜索</button></form><button class="layui-btn layui-btn-sm layui-btn-danger" onclick="deleteSelected()">批量删除</button></div></div>
+        <table class="layui-table" lay-even><thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleAll()"></th><th>ID</th><th>标题</th><th>瞭源 / 发布方</th><th>关键词</th><th>深度采集</th><th>入库时间</th><th>操作</th></tr></thead><tbody>
+        {% for item in items %}<tr><td><input class="row-check" type="checkbox" value="{{ item['id'] }}"></td><td>{{ item['id'] }}</td><td><div class="warehouse-title" title="{{ item['title'] }}">{{ item['title'] }}</div></td><td>{{ item['source_name'] }}<div class="admin-page-subtitle">{{ item['publisher'] or '-' }}</div></td><td>{{ item['keyword'] or '-' }}</td><td><span class="{{ 'deep-yes' if item['deep_collected'] else 'deep-no' }}">{{ '是' if item['deep_collected'] else '否' }}</span></td><td>{{ item['created_at'] }}</td><td><button class="layui-btn layui-btn-xs layui-btn-normal" onclick="viewItem({{ item['id'] }})">查看</button><button class="layui-btn layui-btn-xs" style="background:#087f8c" onclick="openDeepTask({{ item['id'] }})">深度采集</button><button class="layui-btn layui-btn-xs layui-btn-warm" onclick="openDeepData({{ item['id'] }})">深度数据</button><form method="post" action="/admin/warehouse" style="display:inline">{% module xsrf_form_html() %}<input type="hidden" name="action" value="delete"><input type="hidden" name="item_id" value="{{ item['id'] }}"><button class="layui-btn layui-btn-xs layui-btn-danger" onclick="return confirm('确定删除？')">删除</button></form></td></tr>{% end %}
+        {% if not items %}<tr><td colspan="8"><div class="admin-empty">数据仓库为空，请从瞭望采集页面选择数据入库。</div></td></tr>{% end %}
+        </tbody></table>
+        {% set pages=(total+19)//20 %}{% if pages>1 %}<div class="admin-pagination">{% for p in range(1,pages+1) %}<a class="{{ 'current' if p==page else '' }}" href="?page={{ p }}&search={{ search }}">{{ p }}</a>{% end %}</div>{% end %}
+    </section></main><div class="layui-footer">DataFinderAgentOS · 数据仓库</div>
+</div>
+<form id="batchForm" method="post" action="/admin/warehouse" style="display:none">{% module xsrf_form_html() %}<input name="action" value="delete_many"><input name="item_ids" id="batchIds"></form>
+{% end %}
+
+{% block scripts %}
+<script>
+function toggleAll(){var checked=document.getElementById('selectAll').checked;document.querySelectorAll('.row-check').forEach(function(box){box.checked=checked;});}
+function deleteSelected(){var ids=Array.from(document.querySelectorAll('.row-check:checked')).map(function(box){return Number(box.value);});if(!ids.length){layui.layer.msg('请选择数据');return;}layui.layer.confirm('确定删除选中的 '+ids.length+' 条数据？',function(){document.getElementById('batchIds').value=JSON.stringify(ids);document.getElementById('batchForm').submit();});}
+async function viewItem(id){var response=await fetch('/admin/warehouse/'+id);var data=await response.json();if(!data.ok){layui.layer.msg(data.message);return;}var item=data.item;var html='<dl class="detail-grid"><dt>标题</dt><dd>'+AdminUI.escapeHtml(item.title)+'</dd><dt>摘要</dt><dd>'+AdminUI.escapeHtml(item.summary||'-')+'</dd><dt>来源</dt><dd>'+AdminUI.escapeHtml(item.source_name+' / '+(item.publisher||'-'))+'</dd><dt>发布时间</dt><dd>'+AdminUI.escapeHtml(item.published_at||'-')+'</dd><dt>原文地址</dt><dd><a href="'+AdminUI.escapeHtml(item.url)+'" target="_blank" rel="noopener">打开原文</a></dd><dt>入库时间</dt><dd>'+AdminUI.escapeHtml(item.created_at)+'</dd></dl>';layui.layer.open({type:1,title:'仓库数据详情',area:['700px','480px'],content:html});}
+function openDeepTask(id){layui.layer.open({type:1,title:'深度采集任务面板',area:['520px','300px'],content:'<div class="placeholder-panel"><i class="layui-icon layui-icon-engine"></i><b>深度采集执行器已预留</b><p style="margin-top:8px">数据 ID：'+id+'。后续任务将在此展示队列、进度、解析器和执行日志。</p></div>'});}
+function openDeepData(id){layui.layer.open({type:1,title:'深度采集数据',area:['620px','360px'],content:'<div class="placeholder-panel"><i class="layui-icon layui-icon-template-1"></i><b>深度数据查看器已预留</b><p style="margin-top:8px">数据 ID：'+id+' 尚未生成深度解析结果。</p></div>'});}
+</script>
+{% end %}

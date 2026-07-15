@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .layui-header { background: linear-gradient(90deg, #0a1628, #0d7377) !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .layui-header .layui-logo { font-size: 17px; font-weight: 600; letter-spacing: 1px; color: #32e0c4 !important; background: rgba(0,0,0,0.15); }
+    .layui-header .header-right { float: right; line-height: 60px; color: rgba(255,255,255,0.85); margin-right: 20px; }
+    .layui-header .header-right .username { margin-right: 12px; color: #32e0c4; }
+    .layui-header .header-right .layui-btn { height: 32px; line-height: 32px; padding: 0 16px; font-size: 13px; border-radius: 4px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; }
+    .layui-header .header-right .layui-btn:hover { background: rgba(255,255,255,0.22); }
+    .layui-side { background: #1a2332 !important; }
+    .layui-side .layui-side-scroll { background: #1a2332; }
+    .layui-side .layui-nav { background: transparent; }
+    .layui-side .layui-nav-item { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .layui-side .layui-nav .layui-nav-item > a { color: rgba(255,255,255,0.7) !important; padding-left: 24px; font-size: 14px; }
+    .layui-side .layui-nav .layui-nav-item > a:hover { color: #32e0c4 !important; background: rgba(255,255,255,0.05); }
+    .layui-side .layui-nav .layui-this > a { background: #0d7377 !important; color: #32e0c4 !important; }
+    .layui-side .layui-nav-item .layui-icon { margin-right: 8px; font-size: 16px; }
+    .layui-body { background: #f0f2f5; padding: 20px; overflow-y: auto; }
+    .breadcrumb { margin-bottom: 16px; font-size: 14px; color: #666; }
+    .breadcrumb a { color: #14a3a8; text-decoration: none; }
+    .breadcrumb span { margin: 0 6px; }
+    .table-panel { background: #fff; border-radius: 10px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .panel-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .layui-table th { background: #f8f9fa; font-weight: 600; }
+    .layui-footer { text-align: center; background: #fff; color: #bbb; font-size: 12px; border-top: 1px solid #eee; }
+    .pagination-bar { display: flex; justify-content: center; margin-top: 16px; gap: 6px; }
+    .pagination-bar a, .pagination-bar span { display: inline-block; padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; text-decoration: none; color: #333; background: #fff; }
+    .pagination-bar a:hover { background: #14a3a8; color: #fff; border-color: #14a3a8; }
+    .pagination-bar .current { background: #14a3a8; color: #fff; border-color: #14a3a8; }
+    .pagination-bar .disabled { color: #ccc; cursor: default; }
+    .badge-system { background: #f39c12; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+</style>
+{% end %}
+
+{% block body %}
+<div class="layui-layout layui-layout-admin admin-shell">
+    <div class="layui-header">
+        <div class="layui-logo">DataFinderAgentOS</div>
+        <div class="header-right">
+            <span class="username"><i class="layui-icon layui-icon-user"></i> {{ username }}</span>
+            <form method="post" action="/admin/logout" style="display:inline;">
+                {% module xsrf_form_html() %}
+                <button type="submit" class="layui-btn layui-btn-sm"><i class="layui-icon layui-icon-logout"></i> 退出</button>
+            </form>
+        </div>
+    </div>
+    <div class="layui-side">
+        <div class="layui-side-scroll">
+            {% include "_navigation.html" %}
+        </div>
+    </div>
+
+    <main class="layui-body fade-in">
+        <div class="admin-breadcrumb"><a href="/admin">首页</a> / 角色管理</div>
+        <div class="admin-panel">
+            <div class="admin-toolbar">
+                <h3 style="font-size:16px;color:#333;">角色列表（共 {{ total }} 个）</h3>
+                <button class="layui-btn layui-btn-sm" style="background:#14a3a8;" onclick="openAddModal()">
+                    <i class="layui-icon layui-icon-add-1"></i> 新增角色
+                </button>
+            </div>
+            <table class="layui-table" lay-even>
+                <thead><tr><th>ID</th><th>角色名称</th><th>说明</th><th>类型</th><th>创建时间</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% if roles %}
+                    {% for r in roles %}
+                    <tr>
+                        <td>{{ r['id'] }}</td>
+                        <td><b>{{ '系统管理员' if r['id'] == 1 else ('普通用户' if r['id'] == 2 else r['name']) }}</b></td>
+                        <td>{{ ('系统后台管理员，拥有全部后台权限' if r['id'] == 1 else ('普通前台用户' if r['id'] == 2 else r['description'])) }}</td>
+                        <td>{% if r['is_system'] == 1 %}<span class="badge-system">系统默认</span>{% else %}自定义{% end %}</td>
+                        <td>{{ r['created_at'] }}</td>
+                        <td>
+                            {% if r['is_system'] == 0 %}
+                            <form method="post" action="/admin/roles" style="display:inline;">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="role_id" value="{{ r['id'] }}">
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-normal" onclick="openEditModal({{ r['id'] }}, '{{ r['name'] }}', '{{ r['description'] }}')">修改</button>
+                                <button type="submit" name="action" value="delete" class="layui-btn layui-btn-xs layui-btn-danger" onclick="return confirm('确定删除该角色？')">删除</button>
+                            </form>
+                            {% else %}
+                            <span style="color:#bbb;font-size:12px;">系统保护</span>
+                            {% end %}
+                            <button class="layui-btn layui-btn-xs" style="background:#0d7377;color:#fff;" onclick="openPermModal({{ r['id'] }})">功能权限</button>
+                        </td>
+                    </tr>
+                    {% end %}
+                    {% else %}
+                    <tr><td colspan="6" style="text-align:center;color:#999;">暂无角色数据</td></tr>
+                    {% end %}
+                </tbody>
+            </table>
+            {% set total_pages = max(1, (total + 19) // 20) %}
+            {% if total_pages > 1 %}
+            <div class="pagination-bar">
+                <a href="?page=1" class="{% if page <= 1 %}disabled{% end %}">首页</a>
+                {% for p in range(max(1, page - 2), min(total_pages, page + 2) + 1) %}
+                <a href="?page={{ p }}" class="{% if p == page %}current{% end %}">{{ p }}</a>
+                {% end %}
+                <a href="?page={{ total_pages }}" class="{% if page >= total_pages %}disabled{% end %}">末页</a>
+            </div>
+            {% end %}
+        </div>
+    </main>
+    <div class="layui-footer">&copy; 2026 DataFinderAgentOS · 后台管理系统 v1.0</div>
+</div>
+
+<div id="addModal" style="display:none;padding:20px;">
+    <form method="post" action="/admin/roles">
+        {% module xsrf_form_html() %}
+        <input type="hidden" name="action" value="add">
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">角色名称</label><input type="text" name="role_name" required style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:16px;"><label style="font-size:13px;">角色说明</label><input type="text" name="role_desc" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <button type="submit" class="layui-btn" style="background:#14a3a8;width:100%;">创建角色</button>
+    </form>
+</div>
+
+<div id="editModal" style="display:none;padding:20px;">
+    <form method="post" action="/admin/roles">
+        {% module xsrf_form_html() %}
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="role_id" id="edit_role_id">
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">角色名称</label><input type="text" name="role_name" id="edit_role_name" required style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:16px;"><label style="font-size:13px;">角色说明</label><input type="text" name="role_desc" id="edit_role_desc" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <button type="submit" class="layui-btn" style="background:#14a3a8;width:100%;">保存修改</button>
+    </form>
+</div>
+
+<div id="permModal" style="display:none;padding:20px;">
+    <div id="permTree" style="max-height:400px;overflow-y:auto;"></div>
+    <div style="margin-top:16px;text-align:right;">
+        <button class="layui-btn layui-btn-sm" onclick="savePermissions()" style="background:#14a3a8;">保存权限</button>
+    </div>
+</div>
+{% end %}
+
+{% block scripts %}
+<script>
+var TREE_DATA = {% raw tree %};
+var permRoleId = 0;
+
+layui.use(['layer','element','tree'], function() {
+    var element = layui.element;
+    var nav = document.querySelector('.layui-nav-tree');
+    if (nav) {
+        nav.addEventListener('click', function(e) {
+            var a = e.target.closest('a');
+            if (a && a.getAttribute('href') && a.getAttribute('href') !== 'javascript:;') {
+                window.location.href = a.getAttribute('href');
+            }
+        });
+    }
+});
+
+function openAddModal() {
+    layui.use('layer', function() {
+        layui.layer.open({ type: 1, title: '新增角色', area: ['420px','280px'], content: document.getElementById('addModal').innerHTML });
+    });
+}
+
+function openEditModal(id, name, desc) {
+    document.getElementById('edit_role_id').value = id;
+    document.getElementById('edit_role_name').value = name;
+    document.getElementById('edit_role_desc').value = desc;
+    layui.use('layer', function() {
+        layui.layer.open({ type: 1, title: '修改角色', area: ['420px','280px'], content: document.getElementById('editModal').innerHTML });
+    });
+}
+
+function openPermModal(roleId) {
+    permRoleId = roleId;
+    layui.use(['layer','tree'], function() {
+        var layer = layui.layer;
+        var tree = layui.tree;
+        // Load existing permissions
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/admin/role-functions?role_id=' + roleId, true);
+        xhr.onload = function() {
+            var data = JSON.parse(xhr.responseText);
+            var checkedIds = data.function_ids || [];
+            // Build tree with check status
+            var treeInst = tree.render({
+                elem: '#permTree',
+                data: TREE_DATA,
+                id: 'permTreeId',
+                showCheckbox: true,
+                oncheck: function(obj) { /* handled by tree */ }
+            });
+            // Set checked state using setTimeout to ensure tree is rendered
+            setTimeout(function() {
+                var checkboxes = document.querySelectorAll('#permTree .layui-tree-checkbox');
+                // Use tree.setChecked
+                checkedIds.forEach(function(id) {
+                    tree.setChecked('permTreeId', id);
+                });
+            }, 300);
+        };
+        xhr.send();
+        layer.open({ type: 1, title: '功能权限设置', area: ['500px','500px'], content: document.getElementById('permModal').innerHTML });
+    });
+}
+
+function savePermissions() {
+    var checkedIds = [];
+    // Collect all checked items via DOM query
+    var items = document.querySelectorAll('#permTree .layui-tree-pack .layui-tree-main .layui-tree-txt');
+    var checks = document.querySelectorAll('#permTree .layui-form-checked');
+    // Map checked to data ids (use data attributes)
+    var allSpreads = document.querySelectorAll('#permTree .layui-tree-set');
+    allSpreads.forEach(function(spread) {
+        var checkbox = spread.querySelector('.layui-tree-checkbox');
+        if (checkbox && checkbox.classList.contains('layui-form-checked')) {
+            var txt = spread.querySelector('.layui-tree-txt');
+            if (txt && txt.textContent) {
+                // Find matching TREE_DATA entry by name
+                function findIdByName(treeNodes, name) {
+                    for (var i = 0; i < treeNodes.length; i++) {
+                        if (treeNodes[i].name === name) return treeNodes[i].id;
+                        if (treeNodes[i].children) {
+                            var found = findIdByName(treeNodes[i].children, name);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                }
+                var id = findIdByName(TREE_DATA, txt.textContent.trim());
+                if (id !== null) checkedIds.push(id);
+            }
+        }
+    });
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/admin/role-functions', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    var xsrf = document.querySelector('input[name="_xsrf"]');
+    var body = 'role_id=' + permRoleId + '&function_ids=' + JSON.stringify(checkedIds);
+    if (xsrf) body += '&_xsrf=' + encodeURIComponent(xsrf.value);
+    xhr.onload = function() { location.reload(); };
+    xhr.send(body);
+    layui.use('layer', function() { layui.layer.closeAll(); });
+}
+</script>
+{% end %}

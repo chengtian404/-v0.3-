@@ -1,0 +1,49 @@
+DataFinderAgentOS
+│  app.py                         # 应用主入口 程序
+│
+├─app                             # 业务代码
+│  ├─controllers                  # 控制层-controllers包
+│  │      auth.py
+│  │      base.py
+│  │      home.py
+│  │      __init__.py
+│  │
+│  ├─models                       # 模型层-models包
+│  │      db.py
+│  │      user.py
+│  │      __init__.py
+│  │
+│  ├─static                       # 资源目录-用于css\js以及第三方用户组件
+│  │  ├─css
+│  │  │      base.css
+│  │  │
+│  │  ├─dist                      # 第三方组件目录
+│  │  └─js
+│  │          base.js
+│  │
+│  └─templates                    # 模板目录-用于构建前台用户侧和后台管理侧的界面和页面
+│      │  base.html               # 用户侧-公共基础模板页
+│      │  index.html              # 用户侧-登陆后主页
+│      │  login.html              # 用户侧-登录页
+│      │  register.html           # 用户侧-注册页
+│      │
+│      └─admin                    # 后台管理侧目录
+│              base.html          # 后台管理侧-公共基础模板页
+│              index.html         # 后台管理侧-登陆后后台主页
+│              login.html         # 后台管理侧-登录页
+│
+├─config                          # 系统配置存储目录
+├─database                        # 系统数据库和数据存储目录
+├─docs                            # 开发用的提示词工程及开发帮助文档目录
+│      codingprompt.txt           # 用于编码的提示词工程文件，人类维护
+│      constraint.md              # 用于公共全局的约束提示词工程文档，AI自动维护
+│      project_tree.txt           # 项目基础框架树文件（本项目）
+│      project_tree_full.txt      # 项目完整框架树文件，AI自动跟踪维护
+│      requirement.md             # 需求跟踪及完成情况文档，AI自动维护
+│      role.md                    # 系统背景文档，人类约定
+│      template.md                # 模板规范文档，人类约定
+│      test_case.md               # 测试用例文档，人类约定，AI适时维护
+│
+├─skills                          # 自定义开发技能目录（默认为空）
+├─test                            # 测试用例代码目录，格式 xxx_case.py
+└─venv                            # Python虚拟环境

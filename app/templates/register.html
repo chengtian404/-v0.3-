@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% end %}
+{% block head %}<link rel="stylesheet" href="{{ static_url('css/login.css') }}">{% end %}
+{% block content %}
+<main class="auth-page">
+    <section class="auth-brand">
+        <div class="brand-mark"><i class="layui-icon layui-icon-add-circle"></i></div>
+        <div>
+            <div class="brand-name">DataFinderAgentOS</div>
+            <h1>创建用户账号</h1>
+            <p>注册成功后，账号将同步进入后台用户管理并绑定普通用户角色</p>
+        </div>
+        <div class="brand-status"><span></span> 统一账号体系</div>
+    </section>
+    <section class="auth-panel">
+        <div class="auth-heading">
+            <span class="eyebrow">USER REGISTRATION</span>
+            <h2>注册普通用户</h2>
+        </div>
+        {% if error %}<div class="auth-error"><i class="layui-icon layui-icon-about"></i>{{ error }}</div>{% end %}
+        <form method="post" action="/register" class="auth-form">
+            {% module xsrf_form_html() %}
+            <label for="username">用户名</label>
+            <div class="auth-input-wrap">
+                <i class="layui-icon layui-icon-username"></i>
+                <input id="username" name="username" value="{{ username }}" autocomplete="username" minlength="3" maxlength="32" required autofocus>
+            </div>
+            <label for="password">密码</label>
+            <div class="auth-input-wrap">
+                <i class="layui-icon layui-icon-password"></i>
+                <input id="password" type="password" name="password" autocomplete="new-password" minlength="8" required>
+            </div>
+            <label for="password2">确认密码</label>
+            <div class="auth-input-wrap">
+                <i class="layui-icon layui-icon-password"></i>
+                <input id="password2" type="password" name="password2" autocomplete="new-password" minlength="8" required>
+            </div>
+            <button type="submit" class="auth-submit">注册并进入系统</button>
+        </form>
+        <div class="auth-switch">已有账号？<a href="/">返回登录</a></div>
+    </section>
+</main>
+{% end %}

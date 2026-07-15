@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .source-url { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #52616c; }
+    .rule-chip { display:inline-block; padding:3px 8px; border-radius:4px; background:#e8f7f5; color:#087f8c; font-size:11px; }
+    .source-form { padding: 20px; display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+    .source-form .wide { grid-column:1/-1; }
+    .source-form label { display:block; margin-bottom:5px; color:#62717c; font-size:12px; }
+    .source-form .admin-input, .source-form .admin-select { width:100%; }
+    .source-form textarea { min-height:110px; font-family:Consolas,monospace; font-size:12px; }
+    .source-message { margin-bottom:12px; padding:9px 12px; background:#eef9f7; border:1px solid #c6ebe6; color:#087f8c; border-radius:5px; }
+</style>
+{% end %}
+
+{% block body %}
+<div class="layui-layout layui-layout-admin admin-shell">
+    <div class="layui-header"><div class="layui-logo">DataFinderAgentOS</div><div class="header-right"><span class="username">{{ username }}</span><form method="post" action="/admin/logout" style="display:inline;">{% module xsrf_form_html() %}<button class="layui-btn layui-btn-sm layui-btn-primary" type="submit">退出</button></form></div></div>
+    <div class="layui-side"><div class="layui-side-scroll">{% include "_navigation.html" %}</div></div>
+    <main class="layui-body fade-in">
+        <div class="admin-breadcrumb"><a href="/admin">首页</a> / 瞭源管理</div>
+        {% if message %}<div class="source-message">{{ message }}</div>{% end %}
+        <section class="admin-panel">
+            <div class="admin-toolbar"><div><h1 class="admin-page-title">瞭源管理</h1><div class="admin-page-subtitle">管理请求地址、URL 参数、RequestHeaders 与 HTML 解析规则</div></div><div class="admin-toolbar-group"><form method="get"><input class="admin-input" name="search" value="{{ search }}" placeholder="搜索名称或 URL"><button class="layui-btn layui-btn-sm layui-btn-primary">搜索</button></form><button class="layui-btn layui-btn-sm" style="background:#087f8c" onclick="openSourceForm()"><i class="layui-icon layui-icon-add-1"></i>新增瞭源</button></div></div>
+            <table class="layui-table" lay-even><thead><tr><th>ID</th><th>名称</th><th>请求地址</th><th>规则类型</th><th>状态</th><th>最近测试</th><th>操作</th></tr></thead><tbody>
+            {% for source in sources %}
+                <tr><td>{{ source['id'] }}</td><td><b>{{ source['name'] }}</b></td><td><div class="source-url" title="{{ source['base_url'] }}">{{ source['base_url'] }}</div></td><td><span class="rule-chip">{{ '百度新闻' if source['parser_type'] == 'baidu_news' else '通用网页' }}</span></td><td><span class="status-dot {{ 'success' if source['enabled'] else 'error' }}">{{ '启用' if source['enabled'] else '停用' }}</span></td><td><span class="status-dot {{ source['last_test_status'] }}">{{ {'success':'成功','blocked':'受限','error':'失败','untested':'未测试'}.get(source['last_test_status'], source['last_test_status']) }}</span><div class="admin-page-subtitle" title="{{ source['last_test_message'] }}">{{ source['last_test_at'] or '尚未测试' }}</div></td><td>
+                    <button class="layui-btn layui-btn-xs layui-btn-normal" onclick="testSource({{ source['id'] }})">测试</button><button class="layui-btn layui-btn-xs layui-btn-warm" onclick="openSourceForm({{ source['id'] }})">修改</button>
+                    <form method="post" action="/admin/sources" style="display:inline">{% module xsrf_form_html() %}<input type="hidden" name="source_id" value="{{ source['id'] }}"><button class="layui-btn layui-btn-xs layui-btn-primary" name="action" value="toggle">{{ '停用' if source['enabled'] else '启用' }}</button><button class="layui-btn layui-btn-xs layui-btn-danger" name="action" value="delete" onclick="return confirm('确定删除该瞭源？')">删除</button></form>
+                </td></tr>
+            {% end %}
+            {% if not sources %}<tr><td colspan="7"><div class="admin-empty">暂无瞭源规则</div></td></tr>{% end %}
+            </tbody></table>
+            {% set pages = (total + 19) // 20 %}{% if pages > 1 %}<div class="admin-pagination">{% for p in range(1, pages + 1) %}<a class="{{ 'current' if p == page else '' }}" href="?page={{ p }}&search={{ search }}">{{ p }}</a>{% end %}</div>{% end %}
+        </section>
+    </main>
+    <div class="layui-footer">DataFinderAgentOS · 瞭源规则中心</div>
+</div>
+
+<div id="sourceFormModal" style="display:none">
+<form class="source-form" method="post" action="/admin/sources" id="sourceForm">
+    {% module xsrf_form_html() %}<input type="hidden" name="action" id="sourceAction" value="add"><input type="hidden" name="source_id" id="sourceId" value="0">
+    <div><label>瞭源名称</label><input class="admin-input" name="name" id="sourceName" required></div>
+    <div><label>请求方式</label><select class="admin-select" name="method" id="sourceMethod"><option>GET</option></select></div>
+    <div class="wide"><label>请求地址 URL</label><input class="admin-input" name="base_url" id="sourceUrl" required placeholder="https://example.com/search"></div>
+    <div><label>关键词参数名</label><input class="admin-input" name="keyword_param" id="keywordParam" value="word"></div>
+    <div><label>解析器类型</label><select class="admin-select" name="parser_type" id="parserType"><option value="baidu_news">百度新闻</option><option value="generic_html">通用 HTML</option></select></div>
+    <div class="wide"><label>固定 URL 参数（JSON）</label><textarea class="admin-textarea" name="fixed_params_json" id="fixedParams">{}</textarea></div>
+    <div class="wide"><label>RequestHeaders（JSON）</label><textarea class="admin-textarea" name="headers_json" id="headersJson">{}</textarea></div>
+    <div class="wide"><label>解析规则（CSS Selector JSON）</label><textarea class="admin-textarea" name="parser_rules_json" id="parserRules">{}</textarea></div>
+    <div><label>状态</label><select class="admin-select" name="enabled" id="sourceEnabled"><option value="1">启用</option><option value="0">停用</option></select></div>
+    <div style="display:flex;align-items:flex-end"><button class="layui-btn" style="width:100%;background:#087f8c" type="submit">保存规则</button></div>
+</form></div>
+{% end %}
+
+{% block scripts %}
+<script>
+var sourceData={% raw sources_json %};
+function resetSourceForm(){document.getElementById('sourceForm').reset();document.getElementById('sourceAction').value='add';document.getElementById('sourceId').value='0';document.getElementById('fixedParams').value='{}';document.getElementById('headersJson').value='{}';document.getElementById('parserRules').value='{}';}
+function openSourceForm(id){resetSourceForm();if(id){var item=sourceData.find(function(source){return source.id===id;});if(item){document.getElementById('sourceAction').value='edit';document.getElementById('sourceId').value=item.id;document.getElementById('sourceName').value=item.name;document.getElementById('sourceMethod').value=item.method;document.getElementById('sourceUrl').value=item.base_url;document.getElementById('keywordParam').value=item.keyword_param;document.getElementById('parserType').value=item.parser_type;document.getElementById('fixedParams').value=item.fixed_params_json;document.getElementById('headersJson').value=item.headers_json;document.getElementById('parserRules').value=item.parser_rules_json;document.getElementById('sourceEnabled').value=String(item.enabled);}}layui.layer.open({type:1,title:id?'修改瞭源':'新增瞭源',area:['720px','720px'],content:document.getElementById('sourceFormModal')});}
+async function testSource(id){var body=new URLSearchParams({source_id:String(id),keyword:'人工智能',_xsrf:AdminUI.xsrfToken()});var index=layui.layer.load(2);try{var response=await fetch('/admin/sources/test',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body});var data=await response.json();layui.layer.alert(data.message,{icon:data.ok?1:2,title:data.ok?'规则可用':'规则诊断'});}catch(error){layui.layer.alert('测试请求失败：'+error.message,{icon:2});}finally{layui.layer.close(index);}}
+</script>
+{% end %}

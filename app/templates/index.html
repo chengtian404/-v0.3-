@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% end %}
+{% block head %}<link rel="stylesheet" href="{{ static_url('css/chat.css') }}">{% end %}
+{% block content %}
+<div class="chat-app" id="chatApp" data-username="{{ username }}">
+    <aside class="workspace-sidebar" id="workspaceSidebar">
+        <header class="brand-zone">
+            <div class="brand-symbol"><i class="layui-icon layui-icon-chart-screen"></i></div>
+            <div class="brand-copy"><strong>瞭望与问数</strong><span>DataFinderAgentOS</span></div>
+            <button class="icon-button sidebar-close" id="sidebarClose" title="关闭侧栏"><i class="layui-icon layui-icon-close"></i></button>
+        </header>
+        <section class="model-zone">
+            <label for="modelSelect">当前模型</label>
+            <div class="model-select-wrap">
+                <i class="layui-icon layui-icon-engine"></i>
+                <select id="modelSelect" aria-label="选择模型"></select>
+            </div>
+        </section>
+        <section class="task-zone">
+            <div class="task-heading">
+                <span>对话任务</span>
+                <button class="icon-button" id="newConversation" title="新建对话"><i class="layui-icon layui-icon-add-1"></i></button>
+            </div>
+            <div class="conversation-list" id="conversationList"></div>
+        </section>
+        <footer class="user-zone">
+            <div class="user-avatar">{{ username[0].upper() }}</div>
+            <div class="user-copy"><strong>{{ username }}</strong><span>普通用户</span></div>
+            <a class="icon-button" href="/profile" title="个人中心"><i class="layui-icon layui-icon-set"></i></a>
+            <form method="post" action="/logout">
+                {% module xsrf_form_html() %}
+                <button class="icon-button" type="submit" title="退出登录"><i class="layui-icon layui-icon-logout"></i></button>
+            </form>
+        </footer>
+    </aside>
+
+    <main class="chat-workspace">
+        <header class="workspace-header">
+            <button class="icon-button sidebar-open" id="sidebarOpen" title="打开侧栏"><i class="layui-icon layui-icon-spread-left"></i></button>
+            <div class="workspace-title"><strong id="conversationTitle">新对话</strong><span id="conversationMeta">智能对话</span></div>
+            <button class="icon-button" id="deleteConversation" title="删除当前对话"><i class="layui-icon layui-icon-delete"></i></button>
+        </header>
+
+        <section class="dialog-zone" id="dialogZone">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-mark"><i class="layui-icon layui-icon-dialogue"></i></div>
+                <h1>今天需要处理什么数据工作？</h1>
+                <div class="suggestion-grid">
+                    <button data-prompt="系统里现在有多少用户？">用户统计</button>
+                    <button data-prompt="生成数据仓库来源分布图表">仓库报表</button>
+                    <button data-prompt="当前可用的模型和数字员工数量是多少？">能力概览</button>
+                </div>
+            </div>
+            <div class="message-stream" id="messageStream"></div>
+        </section>
+
+        <section class="compose-zone">
+            <div class="command-menu" id="commandMenu"></div>
+            <div class="compose-box">
+                <div class="compose-tools">
+                    <button class="icon-button" id="slashButton" title="快捷操作"><strong>/</strong></button>
+                    <button class="icon-button" id="mentionButton" title="数字员工"><strong>@</strong></button>
+                </div>
+                <textarea id="messageInput" rows="1" maxlength="4000" placeholder="输入消息，使用 / 选择操作，使用 @ 调度数字员工"></textarea>
+                <button class="send-button" id="sendButton" title="发送消息"><i class="layui-icon layui-icon-release"></i></button>
+            </div>
+            <div class="compose-status"><span id="intentStatus">意图路由已就绪</span><span id="charCount">0 / 4000</span></div>
+        </section>
+    </main>
+    <div class="sidebar-mask" id="sidebarMask"></div>
+</div>
+{% end %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="{{ static_url('js/chat.js') }}"></script>
+{% end %}

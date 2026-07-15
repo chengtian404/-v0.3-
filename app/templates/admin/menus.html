@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .layui-header { background: linear-gradient(90deg, #0a1628, #0d7377) !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .layui-header .layui-logo { font-size: 17px; font-weight: 600; letter-spacing: 1px; color: #32e0c4 !important; background: rgba(0,0,0,0.15); }
+    .layui-header .header-right { float: right; line-height: 60px; color: rgba(255,255,255,0.85); margin-right: 20px; }
+    .layui-header .header-right .username { margin-right: 12px; color: #32e0c4; }
+    .layui-header .header-right .layui-btn { height: 32px; line-height: 32px; padding: 0 16px; font-size: 13px; border-radius: 4px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; }
+    .layui-header .header-right .layui-btn:hover { background: rgba(255,255,255,0.22); }
+    .layui-side { background: #1a2332 !important; }
+    .layui-side .layui-side-scroll { background: #1a2332; }
+    .layui-side .layui-nav { background: transparent; }
+    .layui-side .layui-nav-item { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .layui-side .layui-nav .layui-nav-item > a { color: rgba(255,255,255,0.7) !important; padding-left: 24px; font-size: 14px; }
+    .layui-side .layui-nav .layui-nav-item > a:hover { color: #32e0c4 !important; background: rgba(255,255,255,0.05); }
+    .layui-side .layui-nav .layui-this > a { background: #0d7377 !important; color: #32e0c4 !important; }
+    .layui-side .layui-nav-item .layui-icon { margin-right: 8px; font-size: 16px; }
+    .layui-body { background: #f0f2f5; padding: 20px; overflow-y: auto; }
+    .breadcrumb { margin-bottom: 16px; font-size: 14px; color: #666; }
+    .breadcrumb a { color: #14a3a8; text-decoration: none; }
+    .breadcrumb span { margin: 0 6px; }
+    .table-panel { background: #fff; border-radius: 10px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .layui-footer { text-align: center; background: #fff; color: #bbb; font-size: 12px; border-top: 1px solid #eee; }
+    .menu-preview { max-width: 600px; margin: 20px auto; background: #1a2332; border-radius: 10px; padding: 0; overflow: hidden; }
+    .menu-preview .menu-title { padding: 14px 20px; background: rgba(255,255,255,0.05); color: #32e0c4; font-size: 15px; font-weight: 600; }
+    .menu-preview .menu-list { padding: 8px 0; }
+    .menu-preview .menu-item { display: flex; align-items: center; padding: 10px 20px; color: rgba(255,255,255,0.75); font-size: 13px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s; }
+    .menu-preview .menu-item:hover { background: rgba(255,255,255,0.06); color: #32e0c4; }
+    .menu-preview .menu-item.sub { padding-left: 44px; font-size: 12px; color: rgba(255,255,255,0.55); }
+    .menu-preview .menu-item .menu-icon { width: 24px; text-align: center; margin-right: 10px; }
+    .menu-preview .menu-item .menu-arrow { margin-left: auto; font-size: 12px; color: rgba(255,255,255,0.3); }
+    .menu-sort-btn { padding: 2px 8px; font-size: 11px; border: 1px solid #d9d9d9; border-radius: 3px; background: #fff; cursor: pointer; margin: 0 2px; }
+    .menu-sort-btn:hover { background: #14a3a8; color: #fff; border-color: #14a3a8; }
+    .role-selector { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+    .role-selector select { height: 36px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 10px; font-size: 13px; }
+</style>
+{% end %}
+
+{% block body %}
+<div class="layui-layout layui-layout-admin admin-shell">
+    <div class="layui-header">
+        <div class="layui-logo">DataFinderAgentOS</div>
+        <div class="header-right">
+            <span class="username"><i class="layui-icon layui-icon-user"></i> {{ username }}</span>
+            <form method="post" action="/admin/logout" style="display:inline;">
+                {% module xsrf_form_html() %}
+                <button type="submit" class="layui-btn layui-btn-sm"><i class="layui-icon layui-icon-logout"></i> 退出</button>
+            </form>
+        </div>
+    </div>
+    <div class="layui-side">
+        <div class="layui-side-scroll">
+            {% include "_navigation.html" %}
+        </div>
+    </div>
+
+    <main class="layui-body fade-in">
+        <div class="admin-breadcrumb"><a href="/admin">首页</a> / 菜单管理</div>
+        <div class="admin-panel">
+            <div class="role-selector">
+                <label style="font-size:13px;color:#666;">选择角色：</label>
+                <select id="roleSelect" onchange="switchRole()">
+                    {% for r in roles %}
+                    <option value="{{ r['id'] }}" {% if r['id'] == selected_role %}selected{% end %}>{{ '系统管理员' if r['id'] == 1 else ('普通用户' if r['id'] == 2 else r['name']) }}</option>
+                    {% end %}
+                </select>
+                <span style="font-size:12px;color:#999;">菜单会根据角色的功能权限自动同步</span>
+            </div>
+
+            <div class="menu-preview" id="menuPreview">
+                <div class="menu-title"><i class="layui-icon layui-icon-menu-fill"></i> 菜单预览</div>
+                <div class="menu-list" id="menuList"></div>
+            </div>
+
+            <div style="text-align:center;margin-top:18px;">
+                <button class="layui-btn layui-btn-sm" style="background:#14a3a8;" onclick="saveMenuOrder()">保存排序</button>
+            </div>
+        </div>
+    </main>
+    <div class="layui-footer">&copy; 2026 DataFinderAgentOS · 后台管理系统 v1.0</div>
+</div>
+{% end %}
+
+{% block scripts %}
+<script>
+var MENU_DATA = {% raw menus %};
+var currentRoleId = {{ selected_role }};
+
+function switchRole() {
+    var roleId = document.getElementById('roleSelect').value;
+    window.location.href = '/admin/menus?role_id=' + roleId;
+}
+
+function renderMenu() {
+    var container = document.getElementById('menuList');
+    container.innerHTML = '';
+    MENU_DATA.forEach(function(parent, pi) {
+        var div = document.createElement('div');
+        div.className = 'menu-item';
+        div.setAttribute('data-menu-id', parent.id);
+        div.innerHTML = '<i class="layui-icon ' + parent.icon + ' menu-icon"></i>' +
+            parent.name +
+            '<span style="margin-left:auto;display:flex;gap:2px;">' +
+            '<button class="menu-sort-btn" onclick="moveUp(' + pi + ', -1)">&#9650;</button>' +
+            '<button class="menu-sort-btn" onclick="moveDown(' + pi + ', -1)">&#9660;</button>' +
+            '</span>';
+        div.setAttribute('draggable', 'true');
+        container.appendChild(div);
+
+        if (parent.children) {
+            parent.children.forEach(function(child, ci) {
+                var sub = document.createElement('div');
+                sub.className = 'menu-item sub';
+                sub.setAttribute('data-menu-id', child.id);
+                sub.innerHTML = '&#9492; ' + child.name +
+                    '<span style="margin-left:auto;display:flex;gap:2px;">' +
+                    '<button class="menu-sort-btn" onclick="moveChild(' + pi + ',' + ci + ',-1)">&#9650;</button>' +
+                    '<button class="menu-sort-btn" onclick="moveChild(' + pi + ',' + ci + ',1)">&#9660;</button>' +
+                    '</span>';
+                container.appendChild(sub);
+            });
+        }
+    });
+}
+
+function moveUp(pi, _dummy) {
+    if (pi > 0) {
+        var tmp = MENU_DATA[pi];
+        MENU_DATA[pi] = MENU_DATA[pi - 1];
+        MENU_DATA[pi - 1] = tmp;
+        reindexSort();
+        renderMenu();
+    }
+}
+
+function moveDown(pi, _dummy) {
+    if (pi < MENU_DATA.length - 1) {
+        var tmp = MENU_DATA[pi];
+        MENU_DATA[pi] = MENU_DATA[pi + 1];
+        MENU_DATA[pi + 1] = tmp;
+        reindexSort();
+        renderMenu();
+    }
+}
+
+function moveChild(pi, ci, dir) {
+    var children = MENU_DATA[pi].children;
+    if (!children) return;
+    if (dir < 0 && ci > 0) {
+        var tmp = children[ci];
+        children[ci] = children[ci - 1];
+        children[ci - 1] = tmp;
+    } else if (dir > 0 && ci < children.length - 1) {
+        var tmp = children[ci];
+        children[ci] = children[ci + 1];
+        children[ci + 1] = tmp;
+    }
+    reindexSort();
+    renderMenu();
+}
+
+function reindexSort() {
+    MENU_DATA.forEach(function(p, pi) { p.sort_order = pi; });
+}
+
+function saveMenuOrder() {
+    reindexSort();
+    var orderData = [];
+    MENU_DATA.forEach(function(p) {
+        orderData.push({id: p.id, sort_order: p.sort_order});
+        if (p.children) {
+            p.children.forEach(function(c, ci) {
+                orderData.push({id: c.id, sort_order: ci});
+            });
+        }
+    });
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/admin/menus', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    var xsrf = document.querySelector('input[name="_xsrf"]');
+    var body = 'role_id=' + currentRoleId + '&menu_order=' + JSON.stringify(orderData);
+    if (xsrf) body += '&_xsrf=' + encodeURIComponent(xsrf.value);
+    xhr.onload = function() {
+        layui.use('layer', function() { layui.layer.msg('菜单排序已保存', {icon:1}); });
+    };
+    xhr.send(body);
+}
+
+layui.use(['element'], function() {
+    var nav = document.querySelector('.layui-nav-tree');
+    if (nav) {
+        nav.addEventListener('click', function(e) {
+            var a = e.target.closest('a');
+            if (a && a.getAttribute('href') && a.getAttribute('href') !== 'javascript:;') {
+                window.location.href = a.getAttribute('href');
+            }
+        });
+    }
+});
+
+renderMenu();
+</script>
+{% end %}

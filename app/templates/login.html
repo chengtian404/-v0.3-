@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% end %}
+{% block head %}<link rel="stylesheet" href="{{ static_url('css/login.css') }}">{% end %}
+{% block content %}
+<main class="auth-page">
+    <section class="auth-brand">
+        <div class="brand-mark"><i class="layui-icon layui-icon-chart-screen"></i></div>
+        <div>
+            <div class="brand-name">DataFinderAgentOS</div>
+            <h1>瞭望与问数系统</h1>
+            <p>面向数据发现、智能问数与业务协同的一体化工作台</p>
+        </div>
+        <div class="brand-status"><span></span> 用户侧服务</div>
+    </section>
+    <section class="auth-panel">
+        <div class="auth-heading">
+            <span class="eyebrow">USER ACCESS</span>
+            <h2>登录用户工作台</h2>
+        </div>
+        {% if error %}<div class="auth-error"><i class="layui-icon layui-icon-about"></i>{{ error }}</div>{% end %}
+        <form method="post" action="/" class="auth-form">
+            {% module xsrf_form_html() %}
+            <label for="username">用户名</label>
+            <div class="auth-input-wrap">
+                <i class="layui-icon layui-icon-username"></i>
+                <input id="username" name="username" value="{{ username }}" autocomplete="username" required autofocus>
+            </div>
+            <label for="password">密码</label>
+            <div class="auth-input-wrap">
+                <i class="layui-icon layui-icon-password"></i>
+                <input id="password" type="password" name="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="auth-submit">登录系统</button>
+        </form>
+        <div class="auth-switch">还没有账号？<a href="/register">注册普通用户</a></div>
+        <a class="admin-entry" href="/admin/login"><i class="layui-icon layui-icon-set"></i>后台管理入口</a>
+    </section>
+</main>
+{% end %}

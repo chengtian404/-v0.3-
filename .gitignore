@@ -1,0 +1,38 @@
+# Python 虚拟环境
+venv/
+.venv/
+ENV/
+env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 数据库文件
+database/finderos.db
+database/finderos.db-shm
+database/finderos.db-wal
+database/finderos.db
+server-*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local
+
+# 分发
+dist/
+build/
+*.egg-info/

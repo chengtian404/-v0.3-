@@ -1,0 +1,72 @@
+# 项目完整框架树 (project_tree_full.txt)
+
+> 本文档由 AI 自动跟踪维护，反映项目在不同版本下的完整文件结构。
+> 版本: v0.1 | 更新时间: 2026-07-12
+
+```
+DataFinderAgentOS
+│  app.py                         # 应用主入口
+│  make_admin.py                  # 管理员账号创建脚本
+│  requirements.txt               # Python 依赖清单
+│  README.md                      # 项目说明文档
+│
+├─app
+│  ├─controllers
+│  │      __init__.py
+│  │      admin.py                # 后台管理控制器
+│  │      auth.py                 # 登录/注册/登出控制器
+│  │      base.py                 # 公共基础 Handler
+│  │      home.py                 # 用户首页/个人中心控制器
+│  │
+│  ├─models
+│  │      __init__.py
+│  │      db.py                   # SQLite3 数据库连接层
+│  │      user.py                 # UserRepository 用户仓储
+│  │
+│  ├─static
+│  │  ├─css
+│  │  │      admin.css            # 后台管理样式
+│  │  │      base.css             # 全局基础样式
+│  │  │      login.css            # 登录/注册页样式
+│  │  │
+│  │  ├─dist                      # 第三方组件目录（预留）
+│  │  └─js
+│  │          admin.js            # 后台管理脚本
+│  │          base.js             # 全局公共脚本（含 SHA256）
+│  │
+│  └─templates
+│      │  base.html               # 用户侧-公共基础模板页
+│      │  index.html              # 用户侧-登录后首页仪表盘
+│      │  login.html              # 用户侧-登录页
+│      │  profile.html            # 用户侧-个人中心（查看信息+改密码）
+│      │  register.html           # 用户侧-注册页
+│      │
+│      └─admin
+│              base.html          # 后台管理侧-公共基础模板页
+│              index.html         # 后台管理侧-仪表盘首页
+│              login.html         # 后台管理侧-登录页
+│              users.html         # 后台管理侧-用户管理页
+│
+├─config                          # 系统配置存储目录（预留）
+├─database                        # 系统数据库和数据存储目录 (finderos.db)
+├─docs
+│      codingprompt.txt           # VibeCoding 编码提示词
+│      constraint.md              # 全局技术约束文档
+│      project_tree.txt           # 项目基础框架树
+│      project_tree_full.txt      # 项目完整框架树（本文件）
+│      requirement.md             # 需求文档
+│      role.md                    # 系统角色与背景
+│      template.md                # 模板规范文档
+│      test_case.md               # 测试用例文档
+│
+├─skills                          # 自定义开发技能目录（空）
+├─test
+│      user_case.py               # 用户模块功能测试用例（11项）
+└─venv                            # Python3 虚拟环境
+```
+
+## 版本变更记录
+
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| v0.1 | 2026-07-12 | 初始版本：完成基础框架搭建，实现用户登录/注册、前后台双入口、后台仪表盘、用户管理、个人中心 |

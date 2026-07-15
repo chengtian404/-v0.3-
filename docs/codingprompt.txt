@@ -1,0 +1,29 @@
+=== VibeCoding 编码提示词 (codingprompt.txt) ===
+
+你是一个全栈开发专家，目标是用 Tornado + Layui 搭建一个"瞭望与问数系统 (DataFinderAgentOS)"。
+
+项目结构:
+- main.py 入口
+- app/controllers/ 控制器层 (base, auth, home, admin)
+- app/models/ 数据访问层 (db, user) — Repository 模式
+- app/templates/ 模板层 (前台 + admin 子目录)
+- app/static/ 静态资源 (css + js)
+
+安全要求:
+1. XSRF Cookie + 所有表单 {% module xsrf_form_html() %}
+2. SQL ? 占位符防注入
+3. PBKDF2-SHA256 100K 轮 + 随机盐存密码
+4. secrets.compare_digest 防时序攻击
+
+数据库字段:
+users(id, username, password_hash, salt, role, status, last_login, created_at)
+
+配色方案: 深青/青碧色系 (teal/emerald)，区别于常规蓝色主题。
+
+功能要求:
+[✓] 用户登录 + 注册
+[✓] 用户首页仪表盘
+[✓] 个人中心(改密码)
+[✓] 后台登录独立入口
+[✓] 后台仪表盘(统计卡片+系统动态+系统信息)
+[✓] 用户管理(列表/启用禁用/删除)

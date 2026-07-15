@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .layui-header { background: linear-gradient(90deg, #0a1628, #0d7377) !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .layui-header .layui-logo { font-size: 17px; font-weight: 600; letter-spacing: 1px; color: #32e0c4 !important; background: rgba(0,0,0,0.15); }
+    .layui-header .header-right { float: right; line-height: 60px; color: rgba(255,255,255,0.85); margin-right: 20px; }
+    .layui-header .header-right .username { margin-right: 12px; color: #32e0c4; }
+    .layui-header .header-right .layui-btn { height: 32px; line-height: 32px; padding: 0 16px; font-size: 13px; border-radius: 4px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; }
+    .layui-header .header-right .layui-btn:hover { background: rgba(255,255,255,0.22); }
+    .layui-side { background: #1a2332 !important; }
+    .layui-side .layui-side-scroll { background: #1a2332; }
+    .layui-side .layui-nav { background: transparent; }
+    .layui-side .layui-nav-item { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .layui-side .layui-nav .layui-nav-item > a { color: rgba(255,255,255,0.7) !important; padding-left: 24px; font-size: 14px; }
+    .layui-side .layui-nav .layui-nav-item > a:hover { color: #32e0c4 !important; background: rgba(255,255,255,0.05); }
+    .layui-side .layui-nav .layui-this > a { background: #0d7377 !important; color: #32e0c4 !important; }
+    .layui-side .layui-nav-item .layui-icon { margin-right: 8px; font-size: 16px; }
+    .layui-body { background: #f0f2f5; padding: 20px; overflow-y: auto; }
+    .breadcrumb { margin-bottom: 16px; font-size: 14px; color: #666; }
+    .breadcrumb a { color: #14a3a8; text-decoration: none; }
+    .breadcrumb span { margin: 0 6px; }
+    .table-panel { background: #fff; border-radius: 10px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .panel-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .search-box { display: flex; gap: 6px; }
+    .search-box input { width: 220px; height: 36px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 10px; font-size: 13px; outline: none; }
+    .search-box input:focus { border-color: #14a3a8; }
+    .layui-table th { background: #f8f9fa; font-weight: 600; }
+    .layui-footer { text-align: center; background: #fff; color: #bbb; font-size: 12px; border-top: 1px solid #eee; }
+    .pagination-bar { display: flex; justify-content: center; margin-top: 16px; gap: 6px; }
+    .pagination-bar a, .pagination-bar span { display: inline-block; padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; text-decoration: none; color: #333; background: #fff; }
+    .pagination-bar a:hover { background: #14a3a8; color: #fff; border-color: #14a3a8; }
+    .pagination-bar .current { background: #14a3a8; color: #fff; border-color: #14a3a8; }
+    .pagination-bar .disabled { color: #ccc; cursor: default; }
+    .status-active { background: #27ae60; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+    .status-disabled { background: #e74c3c; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+    .level-1 { color: #0d7377; font-weight: 600; }
+    .level-2 { color: #666; padding-left: 20px; }
+</style>
+{% end %}
+
+{% block body %}
+<div class="layui-layout layui-layout-admin admin-shell">
+    <div class="layui-header">
+        <div class="layui-logo">DataFinderAgentOS</div>
+        <div class="header-right">
+            <span class="username"><i class="layui-icon layui-icon-user"></i> {{ username }}</span>
+            <form method="post" action="/admin/logout" style="display:inline;">
+                {% module xsrf_form_html() %}
+                <button type="submit" class="layui-btn layui-btn-sm"><i class="layui-icon layui-icon-logout"></i> 退出</button>
+            </form>
+        </div>
+    </div>
+    <div class="layui-side">
+        <div class="layui-side-scroll">
+            {% include "_navigation.html" %}
+        </div>
+    </div>
+
+    <main class="layui-body fade-in">
+        <div class="admin-breadcrumb"><a href="/admin">首页</a> / 功能管理</div>
+        <div class="admin-panel">
+            <div class="admin-toolbar">
+                <div class="toolbar-left" style="display:flex;gap:10px;">
+                    <form method="get" action="/admin/functions" class="search-box">
+                        <input type="text" name="search" placeholder="搜索功能名称" value="{{ search }}">
+                        <button type="submit" class="layui-btn layui-btn-sm layui-btn-normal" style="height:36px;">搜索</button>
+                    </form>
+                </div>
+                <button class="layui-btn layui-btn-sm" style="background:#14a3a8;height:36px;" onclick="openAddModal()">
+                    <i class="layui-icon layui-icon-add-1"></i> 新增功能
+                </button>
+            </div>
+
+            <table class="layui-table" lay-even>
+                <thead><tr><th>ID</th><th>功能名称</th><th>上级功能</th><th>图标</th><th>路由地址</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% if functions %}
+                    {% for f in functions %}
+                    <tr>
+                        <td>{{ f['id'] }}</td>
+                        <td class="{% if f['parent_id'] == 0 %}level-1{% else %}level-2{% end %}">{{ '&#9492; ' if f['parent_id'] != 0 else '' }}{{ f['name'] }}</td>
+                        <td>{{ f['parent_name'] or '一级功能' }}</td>
+                        <td><i class="layui-icon {{ f['icon'] }}"></i> {{ f['icon'] }}</td>
+                        <td>{{ f['route'] or '-' }}</td>
+                        <td>{{ f['sort_order'] }}</td>
+                        <td>
+                            {% if f['status'] == 1 %}
+                            <span class="status-active">启用</span>
+                            {% else %}
+                            <span class="status-disabled">禁用</span>
+                            {% end %}
+                        </td>
+                        <td>
+                            <form method="post" action="/admin/functions" style="display:inline;">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="func_id" value="{{ f['id'] }}">
+                                <input type="hidden" name="page" value="{{ page }}">
+                                <input type="hidden" name="search" value="{{ search }}">
+                                <button type="submit" name="action" value="toggle_status" class="layui-btn layui-btn-xs layui-btn-normal">{{ '禁用' if f['status'] == 1 else '启用' }}</button>
+                                <button type="button" class="layui-btn layui-btn-xs layui-btn-warm" onclick="openEditModal({{ f['id'] }}, '{{ f['name'] }}', {{ f['parent_id'] }}, '{{ f['icon'] }}', '{{ f['route'] }}', {{ f['sort_order'] }}, {{ f['status'] }})">修改</button>
+                                <button type="submit" name="action" value="delete" class="layui-btn layui-btn-xs layui-btn-danger" onclick="return confirm('确定删除该功能及其二级功能？')">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% end %}
+                    {% else %}
+                    <tr><td colspan="8" style="text-align:center;color:#999;">暂无功能数据</td></tr>
+                    {% end %}
+                </tbody>
+            </table>
+            {% set total_pages = max(1, (total + 19) // 20) %}
+            {% if total_pages > 1 %}
+            <div class="pagination-bar">
+                <a href="?page=1&search={{ search }}" class="{% if page <= 1 %}disabled{% end %}">首页</a>
+                {% for p in range(max(1, page - 2), min(total_pages, page + 2) + 1) %}
+                <a href="?page={{ p }}&search={{ search }}" class="{% if p == page %}current{% end %}">{{ p }}</a>
+                {% end %}
+                <a href="?page={{ total_pages }}&search={{ search }}" class="{% if page >= total_pages %}disabled{% end %}">末页</a>
+            </div>
+            {% end %}
+        </div>
+    </main>
+    <div class="layui-footer">&copy; 2026 DataFinderAgentOS · 后台管理系统 v1.0</div>
+</div>
+
+<div id="addModal" style="display:none;padding:20px;">
+    <form method="post" action="/admin/functions">
+        {% module xsrf_form_html() %}
+        <input type="hidden" name="action" value="add">
+        <input type="hidden" name="page" value="{{ page }}">
+        <input type="hidden" name="search" value="{{ search }}">
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">功能名称</label><input type="text" name="func_name" required style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">上级功能</label>
+            <select name="parent_id" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                <option value="0">一级功能</option>
+                {% for af in all_funcs %}
+                <option value="{{ af['id'] }}">{{ af['name'] }}</option>
+                {% end %}
+            </select>
+        </div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">图标类名（Layui）</label><input type="text" name="func_icon" value="layui-icon-file" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">路由地址</label><input type="text" name="func_route" placeholder="/admin/example" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:16px;"><label style="font-size:13px;">排序值</label><input type="number" name="sort_order" value="0" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <button type="submit" class="layui-btn" style="background:#14a3a8;width:100%;">创建功能</button>
+    </form>
+</div>
+
+<div id="editModal" style="display:none;padding:20px;">
+    <form method="post" action="/admin/functions">
+        {% module xsrf_form_html() %}
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="func_id" id="efunc_id">
+        <input type="hidden" name="page" value="{{ page }}">
+        <input type="hidden" name="search" value="{{ search }}">
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">功能名称</label><input type="text" name="func_name" id="efunc_name" required style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">上级功能</label>
+            <select name="parent_id" id="efunc_parent" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                <option value="0">一级功能</option>
+                {% for af in all_funcs %}
+                <option value="{{ af['id'] }}">{{ af['name'] }}</option>
+                {% end %}
+            </select>
+        </div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">图标类名</label><input type="text" name="func_icon" id="efunc_icon" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">路由地址</label><input type="text" name="func_route" id="efunc_route" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:12px;"><label style="font-size:13px;">排序值</label><input type="number" name="sort_order" id="efunc_sort" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;"></div>
+        <div style="margin-bottom:16px;"><label style="font-size:13px;">状态</label>
+            <select name="func_status" id="efunc_status" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                <option value="1">启用</option>
+                <option value="0">禁用</option>
+            </select>
+        </div>
+        <button type="submit" class="layui-btn" style="background:#14a3a8;width:100%;">保存修改</button>
+    </form>
+</div>
+{% end %}
+
+{% block scripts %}
+<script>
+layui.use(['layer','element'], function() {
+    var element = layui.element;
+    var nav = document.querySelector('.layui-nav-tree');
+    if (nav) {
+        nav.addEventListener('click', function(e) {
+            var a = e.target.closest('a');
+            if (a && a.getAttribute('href') && a.getAttribute('href') !== 'javascript:;') {
+                window.location.href = a.getAttribute('href');
+            }
+        });
+    }
+});
+
+function openAddModal() {
+    layui.use('layer', function() {
+        layui.layer.open({ type: 1, title: '新增功能', area: ['480px','520px'], content: document.getElementById('addModal').innerHTML });
+    });
+}
+
+function openEditModal(id, name, parentId, icon, route, sort, status) {
+    document.getElementById('efunc_id').value = id;
+    document.getElementById('efunc_name').value = name;
+    document.getElementById('efunc_parent').value = parentId;
+    document.getElementById('efunc_icon').value = icon;
+    document.getElementById('efunc_route').value = route;
+    document.getElementById('efunc_sort').value = sort;
+    document.getElementById('efunc_status').value = status;
+    layui.use('layer', function() {
+        layui.layer.open({ type: 1, title: '修改功能', area: ['480px','580px'], content: document.getElementById('editModal').innerHTML });
+    });
+}
+</script>
+{% end %}

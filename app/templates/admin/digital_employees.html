@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .layui-header { background: linear-gradient(90deg, #0a1628, #0d7377) !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .layui-header .layui-logo { font-size: 17px; font-weight: 600; letter-spacing: 1px; color: #32e0c4 !important; background: rgba(0,0,0,0.15); }
+    .layui-header .header-right { float: right; line-height: 60px; color: rgba(255,255,255,0.85); margin-right: 20px; }
+    .layui-header .header-right .username { margin-right: 12px; color: #32e0c4; }
+    .layui-header .header-right .layui-btn { height: 32px; line-height: 32px; padding: 0 16px; font-size: 13px; border-radius: 4px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; }
+    .layui-header .header-right .layui-btn:hover { background: rgba(255,255,255,0.22); }
+    .layui-side { background: #1a2332 !important; }
+    .layui-side .layui-side-scroll { background: #1a2332; }
+    .layui-side .layui-nav { background: transparent; }
+    .layui-side .layui-nav-item { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .layui-side .layui-nav .layui-nav-item > a { color: rgba(255,255,255,0.7) !important; padding-left: 24px; font-size: 14px; }
+    .layui-side .layui-nav .layui-nav-item > a:hover { color: #32e0c4 !important; background: rgba(255,255,255,0.05); }
+    .layui-side .layui-nav .layui-this > a { background: #0d7377 !important; color: #32e0c4 !important; }
+    .layui-side .layui-nav-item .layui-icon { margin-right: 8px; font-size: 16px; }
+    .layui-body { background: #f0f2f5; padding: 20px; overflow-y: auto; }
+    .admin-breadcrumb { margin-bottom: 16px; font-size: 14px; color: #666; }
+    .admin-breadcrumb a { color: #14a3a8; text-decoration: none; }
+    .admin-breadcrumb span { margin: 0 6px; }
+    .table-panel { background: #fff; border-radius: 10px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .panel-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .panel-toolbar .toolbar-left { display: flex; gap: 10px; align-items: center; }
+    .panel-toolbar .toolbar-right { display: flex; gap: 10px; }
+    .search-box { display: flex; gap: 6px; }
+    .search-box input { width: 220px; height: 36px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 10px; font-size: 13px; outline: none; }
+    .search-box input:focus { border-color: #14a3a8; }
+    .layui-table th { background: #f8f9fa; font-weight: 600; }
+    .layui-footer { text-align: center; background: #fff; color: #bbb; font-size: 12px; border-top: 1px solid #eee; }
+    .status-badge { padding: 2px 10px; border-radius: 10px; font-size: 12px; color: #fff; }
+    .status-active { background: #27ae60; }
+    .status-disabled { background: #e74c3c; }
+    .type-badge { padding: 2px 10px; border-radius: 10px; font-size: 12px; color: #fff; }
+    .type-llm { background: #3498db; }
+    .type-api { background: #9b59b6; }
+    .pagination-bar { display: flex; justify-content: center; margin-top: 16px; gap: 6px; }
+    .pagination-bar a, .pagination-bar span { display: inline-block; padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; text-decoration: none; color: #333; background: #fff; }
+    .pagination-bar a:hover { background: #14a3a8; color: #fff; border-color: #14a3a8; }
+    .pagination-bar .current { background: #14a3a8; color: #fff; border-color: #14a3a8; }
+    .pagination-bar .disabled { color: #ccc; cursor: default; }
+    .form-inline { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .form-inline label { font-size: 13px; color: #666; min-width: 60px; }
+    .form-inline input, .form-inline select, .form-inline textarea { height: 34px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 8px; font-size: 13px; }
+    .form-inline input:focus, .form-inline select:focus { border-color: #14a3a8; outline: none; }
+    .form-section { border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px; font-weight: 600; color: #0d7377; font-size: 14px; }
+</style>
+{% end %}
+{% block body %}
+<div class="layui-layout layui-layout-admin admin-shell">
+<form id="xsrfForm" style="display:none">{% module xsrf_form_html() %}</form>
+    <div class="layui-header">
+        <div class="layui-logo">DataFinderAgentOS</div>
+        <div class="header-right">
+            <span class="username"><i class="layui-icon layui-icon-user"></i> {{ username }}</span>
+            <form method="post" action="/admin/logout" style="display:inline;">
+                {% module xsrf_form_html() %}
+                <button type="submit" class="layui-btn layui-btn-sm"><i class="layui-icon layui-icon-logout"></i> 退出</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="layui-side">
+        <div class="layui-side-scroll">
+            {% include "_navigation.html" %}
+        </div>
+    </div>
+
+    <main class="layui-body fade-in">
+        <div class="admin-breadcrumb"><a href="/admin">首页</a> / 数字员工</div>
+        {% if msg %}
+        <div style="padding:10px 16px; margin-bottom:12px; border-radius:6px; font-size:13px;">{% raw msg %}</div>
+        {% end %}
+
+        <div class="table-panel">
+            <div class="panel-toolbar">
+                <div class="toolbar-left">
+                    <form method="get" action="/admin/digital-employees" class="search-box">
+                        <input type="text" name="search" placeholder="搜索员工名称..." value="{{ search }}">
+                        <select name="type" style="width:120px;height:36px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;">
+                            <option value="">全部类型</option>
+                            <option value="llm" {% if selected_type == 'llm' %}selected{% end %}>LLM 型</option>
+                            <option value="api" {% if selected_type == 'api' %}selected{% end %}>API 型</option>
+                        </select>
+                        <button type="submit" class="layui-btn layui-btn-sm" style="background:#14a3a8;"><i class="layui-icon layui-icon-search"></i> 搜索</button>
+                    </form>
+                </div>
+                <div class="toolbar-right">
+                    <button class="layui-btn layui-btn-sm" style="background:#14a3a8;" onclick="openEmployeeForm(0)"><i class="layui-icon layui-icon-add-1"></i> 新增员工</button>
+                </div>
+            </div>
+
+            <table class="layui-table">
+                <thead>
+                    <tr>
+                        <th style="width:50px;">ID</th>
+                        <th style="width:60px;">头像</th>
+                        <th>姓名</th>
+                        <th>类型</th>
+                        <th>功能</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>{{ emp['id'] }}</td>
+                        <td style="font-size:24px;text-align:center;">{{ emp.get('avatar', '\U0001F916') }}</td>
+                        <td><strong>{{ emp['name'] }}</strong><br><span style="color:#999;font-size:12px;">{{ emp.get('description', '')[:30] }}</span></td>
+                        <td><span class="type-badge type-{{ emp['emp_type'] }}">{{ 'LLM 型' if emp['emp_type'] == 'llm' else 'API 型' }}</span></td>
+                        <td style="font-size:12px;color:#666;">
+                            {% if emp['emp_type'] == 'llm' %}
+                                模型 + Prompt{% if emp['config'].get('use_crawl4ai') %} + Crawl4AI{% end %}{% if emp['config'].get('skills') %} + Skill{% end %}
+                            {% else %}
+                                {{ emp['config'].get('api_method', 'GET') }} {{ emp['config'].get('api_url', '')[:40] }}
+                            {% end %}
+                        </td>
+                        <td>
+                            <span class="status-badge {{ 'status-active' if emp['enabled'] else 'status-disabled' }}">
+                                {{ '启用' if emp['enabled'] else '禁用' }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="layui-btn layui-btn-xs" style="background:#27ae60;" onclick="executeEmployee({{ emp['id'] }}, '{{ emp['name'] }}', '{{ emp['emp_type'] }}')">执行</button>
+                            <button class="layui-btn layui-btn-xs" style="background:#3498db;" onclick="openEmployeeForm({{ emp['id'] }})">编辑</button>
+                            <form method="post" action="/admin/digital-employees" style="display:inline;">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="toggle_status">
+                                <input type="hidden" name="emp_id" value="{{ emp['id'] }}">
+                                <button type="submit" class="layui-btn layui-btn-xs" style="background:#f39c12;">{{ '禁用' if emp['enabled'] else '启用' }}</button>
+                            </form>
+                            <form method="post" action="/admin/digital-employees" style="display:inline;" onsubmit="return confirm('确定删除该员工？');">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="emp_id" value="{{ emp['id'] }}">
+                                <button type="submit" class="layui-btn layui-btn-xs" style="background:#e74c3c;">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% end %}
+                    {% if not employees %}
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:#999;">没有数字员工数据</td></tr>
+                    {% end %}
+                </tbody>
+            </table>
+
+            {% set total_pages = (total + 19) // 20 %}
+            {% if total_pages > 1 %}
+            <div class="pagination-bar">
+                <a href="?page=1&search={{ search }}&type={{ selected_type }}" class="{% if page <= 1 %}disabled{% end %}">首页</a>
+                <a href="?page={{ max(1, page - 1) }}&search={{ search }}&type={{ selected_type }}" class="{% if page <= 1 %}disabled{% end %}">上一页</a>
+                {% for p in range(max(1, page - 2), min(total_pages, page + 2) + 1) %}
+                <a href="?page={{ p }}&search={{ search }}&type={{ selected_type }}" class="{% if p == page %}current{% end %}">{{ p }}</a>
+                {% end %}
+                <a href="?page={{ min(total_pages, page + 1) }}&search={{ search }}&type={{ selected_type }}" class="{% if page >= total_pages %}disabled{% end %}">下一页</a>
+                <a href="?page={{ total_pages }}&search={{ search }}&type={{ selected_type }}" class="{% if page >= total_pages %}disabled{% end %}">末页</a>
+            </div>
+            {% end %}
+        </div>
+    </main>
+
+    <div class="layui-footer">&copy; 2026 DataFinderAgentOS · 后台管理系统 v1.0</div>
+</div>
+<!-- Employee Form Modal -->
+<dialog id="employeeFormModal" class="admin-dialog admin-dialog--employee">
+    <div class="admin-dialog-header">
+        <strong class="admin-dialog-title" data-dialog-title>新增数字员工</strong>
+        <button type="button" class="admin-dialog-close" title="关闭" aria-label="关闭" onclick="closeNativeDialog('employeeFormModal')">&times;</button>
+    </div>
+    <div class="admin-dialog-body">
+    <form method="post" action="/admin/digital-employees" id="employeeForm" onsubmit="return validateForm();">
+        {% module xsrf_form_html() %}
+        <input type="hidden" name="action" id="formAction" value="add">
+        <input type="hidden" name="emp_id" id="formEmpId" value="0">
+
+        <div class="form-section">基础信息</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">名称 <span style="color:red;">*</span></label>
+                <input type="text" name="name" id="empName" required style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;">
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">头像 (Emoji)</label>
+                <input type="text" name="avatar" id="empAvatar" value="🤖" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;">
+            </div>
+        </div>
+        <div style="margin-bottom:10px;">
+            <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">描述</label>
+            <textarea name="description" id="empDesc" rows="2" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:6px 8px;"></textarea>
+        </div>
+
+        <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">员工类型</label>
+            <select name="emp_type" id="empType" onchange="toggleTypeFields()" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                <option value="llm">LLM 型 (模型 + Prompt)</option>
+                <option value="api">API 型 (HTTP 接口)</option>
+            </select>
+        </div>
+
+        <!-- LLM-specific fields -->
+        <div id="llmFields">
+            <div class="form-section">LLM 配置</div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">关联模型</label>
+                <select name="model_id" id="empModelId" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                    <option value="0">使用默认模型</option>
+                    {% for m in models %}
+                    <option value="{{ m['id'] }}">{{ m['name'] }} ({{ m.get('model_name','') }})</option>
+                    {% end %}
+                </select>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">系统提示词 (System Prompt)</label>
+                <textarea name="system_prompt" id="empPrompt" rows="4" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:6px 8px;font-family:Consolas,monospace;">你是一名乐于助人的数字化员工，请根据用户的输入提供帮助。</textarea>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">技能 (Skills) - 可选</label>
+                <textarea name="skills" id="empSkills" rows="2" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:6px 8px;" placeholder="JSON 对象描述技能，如：{&quot;data_analysis&quot;: &quot;数据分析能力&quot;}"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="margin-bottom:10px;">
+                    <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">Temperature</label>
+                    <input type="number" name="temperature" id="empTemp" value="0.7" step="0.1" min="0" max="2" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;">
+                </div>
+                <div style="margin-bottom:10px;">
+                    <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">Max Tokens</label>
+                    <input type="number" name="max_tokens" id="empMaxTokens" value="2048" step="1" min="1" max="32768" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;">
+                </div>
+            </div>
+            <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                <input type="checkbox" name="use_crawl4ai" id="empCrawl4ai" value="1" onchange="toggleCrawl4ai()">
+                <label for="empCrawl4ai" style="font-size:13px;color:#666;">启用 Crawl4AI (网页爬取能力)</label>
+            </div>
+            <div id="crawl4aiFields" style="display:none;margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">Crawl4AI 配置</label>
+                <textarea name="crawl4ai_config" id="empCrawlConfig" rows="2" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:6px 8px;" placeholder="爬取配置（JSON 格式）"></textarea>
+            </div>
+        </div>
+
+        <!-- API-specific fields -->
+        <div id="apiFields" style="display:none;">
+            <div class="form-section">API 配置</div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">API URL <span style="color:red;">*</span></label>
+                <input type="text" name="api_url" id="empApiUrl" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;" placeholder="https://api.example.com/data?q=&#123;&#123;input&#125;&#125;">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                    <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">请求方法</label>
+                    <select name="api_method" id="empApiMethod" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">响应格式</label>
+                    <select name="response_type" id="empResponseType" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                        <option value="json">JSON</option>
+                        <option value="text">纯文本</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">请求头 (Headers JSON)</label>
+                <textarea name="api_headers" id="empApiHeaders" rows="3" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:6px 8px;font-family:Consolas,monospace;">{&quot;User-Agent&quot;: &quot;DataFinderAgentOS/1.0&quot;}</textarea>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">查询参数 (Params JSON)</label>
+                <textarea name="api_params" id="empApiParams" rows="2" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:6px 8px;font-family:Consolas,monospace;">{}</textarea>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">请求体模板 (Body Template)</label>
+                <textarea name="api_body_template" id="empApiBody" rows="3" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:6px 8px;font-family:Consolas,monospace;" placeholder='{"input": "&#123;&#123;input&#125;&#125;"}'></textarea>
+            </div>
+            <div class="form-section">API 认证</div>
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;">
+                <div>
+                    <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">认证类型</label>
+                    <select name="api_auth_type" id="empAuthType" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;">
+                        <option value="none">无认证</option>
+                        <option value="bearer">Bearer Token</option>
+                        <option value="basic">Basic Auth</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">认证值</label>
+                    <input type="text" name="api_auth_value" id="empAuthValue" style="width:100%;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 8px;">
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:16px;text-align:center;">
+            <button type="submit" class="layui-btn" style="background:#14a3a8;width:200px;">保存</button>
+        </div>
+    </form>
+    </div>
+</dialog>
+
+<!-- Execute Modal -->
+<dialog id="executeModal" class="admin-dialog admin-dialog--execute">
+    <div class="admin-dialog-header">
+        <strong class="admin-dialog-title" data-dialog-title>执行数字员工</strong>
+        <button type="button" class="admin-dialog-close" title="关闭" aria-label="关闭" onclick="closeNativeDialog('executeModal')">&times;</button>
+    </div>
+    <div class="admin-dialog-body">
+    <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:13px;color:#666;margin-bottom:4px;">向数字员工 <strong id="execEmpName"></strong> 发送指令</label>
+        <textarea id="execInput" rows="3" style="width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:8px;font-size:13px;" placeholder="输入您的指令..."></textarea>
+    </div>
+    <div style="margin-bottom:12px;">
+        <button class="layui-btn" style="background:#14a3a8;" onclick="doExecute()"><i class="layui-icon layui-icon-senior"></i> 执行</button>
+    </div>
+    <div id="execResult" style="border:1px solid #eee;border-radius:6px;padding:12px;background:#f9f9f9;min-height:60px;font-size:13px;line-height:1.6;white-space:pre-wrap;display:none;"></div>
+    </div>
+</dialog>
+{% end %}
+
+{% block scripts %}
+<script>
+var empData = {% raw employees_json %};
+var models = {% raw models_json %};
+var currentExecId = 0;
+
+function openDomLayer(elementId, options) {
+    var element = document.getElementById(elementId);
+    if (!element) {
+        window.alert('弹窗内容加载失败，请刷新页面后重试。');
+        return;
+    }
+    var title = element.querySelector('[data-dialog-title]');
+    if (title) title.textContent = options.title || '';
+    if (typeof element.showModal === 'function') {
+        if (!element.open) element.showModal();
+    } else {
+        element.setAttribute('open', '');
+    }
+}
+
+function closeNativeDialog(elementId) {
+    var element = document.getElementById(elementId);
+    if (!element) return;
+    if (typeof element.close === 'function' && element.open) element.close();
+    else element.removeAttribute('open');
+}
+
+function toggleTypeFields() {
+    var type = document.getElementById('empType').value;
+    document.getElementById('llmFields').style.display = type === 'llm' ? 'block' : 'none';
+    document.getElementById('apiFields').style.display = type === 'api' ? 'block' : 'none';
+}
+
+function toggleCrawl4ai() {
+    document.getElementById('crawl4aiFields').style.display =
+        document.getElementById('empCrawl4ai').checked ? 'block' : 'none';
+}
+
+function validateForm() {
+    var name = document.getElementById('empName').value.trim();
+    if (!name) {
+        window.alert('请输入员工名称');
+        return false;
+    }
+    return true;
+}
+
+function openEmployeeForm(id) {
+    document.getElementById('employeeForm').reset();
+    document.getElementById('formAction').value = id ? 'edit' : 'add';
+    document.getElementById('formEmpId').value = id || 0;
+    toggleTypeFields();
+    document.getElementById('crawl4aiFields').style.display = 'none';
+
+    if (id) {
+        var emp = empData.find(function(item) { return item.id === id; });
+        if (emp) {
+            document.getElementById('empName').value = emp.name;
+            document.getElementById('empDesc').value = emp.description || '';
+            document.getElementById('empAvatar').value = emp.avatar || '🤖';
+            document.getElementById('empType').value = emp.emp_type;
+            toggleTypeFields();
+
+            var cfg = emp.config || {};
+            if (emp.emp_type === 'llm') {
+                document.getElementById('empModelId').value = cfg.model_id || 0;
+                document.getElementById('empPrompt').value = cfg.system_prompt || '';
+                document.getElementById('empSkills').value = cfg.skills || '';
+                document.getElementById('empTemp').value = cfg.temperature || 0.7;
+                document.getElementById('empMaxTokens').value = cfg.max_tokens || 2048;
+                if (cfg.use_crawl4ai) {
+                    document.getElementById('empCrawl4ai').checked = true;
+                    document.getElementById('crawl4aiFields').style.display = 'block';
+                    document.getElementById('empCrawlConfig').value = cfg.crawl4ai_config || '';
+                }
+            } else {
+                document.getElementById('empApiUrl').value = cfg.api_url || '';
+                document.getElementById('empApiMethod').value = cfg.api_method || 'GET';
+                document.getElementById('empResponseType').value = cfg.response_type || 'json';
+                document.getElementById('empApiHeaders').value = cfg.api_headers || '{}';
+                document.getElementById('empApiParams').value = cfg.api_params || '{}';
+                document.getElementById('empApiBody').value = cfg.api_body_template || '';
+                document.getElementById('empAuthType').value = cfg.api_auth_type || 'none';
+                document.getElementById('empAuthValue').value = cfg.api_auth_value || '';
+            }
+        }
+    }
+
+    var title = id ? '编辑数字员工' : '新增数字员工';
+    var area = [Math.min(640, window.innerWidth - 24) + 'px', Math.min(580, window.innerHeight - 24) + 'px'];
+    openDomLayer('employeeFormModal', {
+        title: title,
+        area: area,
+        shadeClose: false,
+        resize: true
+    });
+}
+
+function executeEmployee(id, name, type) {
+    currentExecId = id;
+    document.getElementById('execEmpName').textContent = name + ' (' + (type === 'llm' ? 'LLM 型' : 'API 型') + ')';
+    document.getElementById('execInput').value = '';
+    document.getElementById('execResult').style.display = 'none';
+    document.getElementById('execResult').innerHTML = '';
+    openDomLayer('executeModal', {
+        title: '执行数字员工 - ' + name,
+        area: [Math.min(600, window.innerWidth - 24) + 'px', Math.min(500, window.innerHeight - 24) + 'px'],
+        shadeClose: false
+    });
+}
+
+async function doExecute() {
+    var input = document.getElementById('execInput').value.trim();
+    if (!input) {
+        window.alert('请输入指令');
+        return;
+    }
+
+    var resultDiv = document.getElementById('execResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<span style="color:#999;">正在执行...</span>';
+
+    try {
+        var body = new URLSearchParams();
+        body.append('action', 'execute');
+        body.append('emp_id', String(currentExecId));
+        body.append('user_input', input);
+        // Get xsrf from form input
+        var xsrfEl = document.querySelector('input[name="_xsrf"]');
+        if (xsrfEl) body.append('_xsrf', xsrfEl.value);
+
+        var response = await fetch('/admin/digital-employees', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        });
+        var data = await response.json();
+
+        if (data.ok) {
+            var html = '<div style="color:#27ae60;font-weight:600;margin-bottom:8px;">✅ 执行成功</div>';
+            if (data.message) {
+                html += '<div>' + escapeHtml(data.message) + '</div>';
+            }
+            if (data.data) {
+                html += '<div><pre style="background:#fff;border:1px solid #eee;padding:10px;border-radius:4px;overflow:auto;max-height:200px;font-size:12px;">' + escapeHtml(JSON.stringify(data.data, null, 2)) + '</pre></div>';
+            }
+            if (data.model_name) {
+                html += '<div style="margin-top:8px;color:#999;font-size:12px;">使用模型: ' + data.model_name + '</div>';
+            }
+            resultDiv.innerHTML = html;
+        } else {
+            resultDiv.innerHTML = '<div style="color:#e74c3c;font-weight:600;">❌ 执行失败</div><div>' + escapeHtml(data.message || '未知错误') + '</div>';
+        }
+    } catch (err) {
+        resultDiv.innerHTML = '<div style="color:#e74c3c;font-weight:600;">❌ 请求失败</div><div>' + escapeHtml(err.message) + '</div>';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+}
+</script>
+{% end %}

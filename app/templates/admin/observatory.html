@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .watch-page { max-width: 1360px; margin: 0 auto; }
+    .watch-hero { background: #101820; color: #fff; padding: 28px; border-radius: 8px; position: relative; overflow: hidden; }
+    .watch-hero::after { content: ""; position: absolute; right: -40px; top: -80px; width: 230px; height: 230px; border: 1px solid rgba(94,234,212,.28); border-radius: 50%; }
+    .watch-hero h1 { margin: 0 0 6px; font-size: 24px; letter-spacing: 0; }
+    .watch-hero p { margin: 0; color: #94a9b5; font-size: 13px; }
+    .search-command { margin-top: 22px; display: grid; grid-template-columns: 1fr 120px; gap: 10px; max-width: 850px; position: relative; z-index: 1; }
+    .search-command input { height: 48px; border: 1px solid #394a56; background: #17232c; color: #fff; border-radius: 5px; padding: 0 16px; font-size: 15px; outline: none; }
+    .search-command input:focus { border-color: #2dd4bf; }
+    .collect-button { border: 0; border-radius: 5px; background: #14b8a6; color: #062b2c; font-weight: 700; cursor: pointer; }
+    .collect-button:disabled { opacity: .55; cursor: wait; }
+    .watch-zone { margin-top: 16px; background: #fff; border: 1px solid #e3e8ec; border-radius: 8px; padding: 20px; }
+    .zone-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+    .zone-code { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 4px; background: #e7f8f5; color: #087f8c; font-weight: 800; margin-right: 8px; }
+    .zone-title { font-size: 16px; color: #17212b; font-weight: 650; }
+    .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+    .source-option { border: 1px solid #dfe5e9; border-radius: 6px; padding: 13px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .source-option:hover { border-color: #14b8a6; background: #f6fffd; }
+    .source-option input { width: 17px; height: 17px; accent-color: #087f8c; }
+    .source-name { font-weight: 650; color: #24313a; }
+    .source-meta { color: #86939c; font-size: 11px; margin-top: 3px; }
+    .result-actions { display: flex; gap: 7px; align-items: center; }
+    .news-gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .news-card { border: 1px solid #e1e7eb; border-radius: 7px; overflow: hidden; background: #fff; min-height: 300px; position: relative; }
+    .news-card.selected { border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,.12); }
+    .news-visual { height: 145px; background: #dce5e9; overflow: hidden; position: relative; }
+    .news-visual img { width: 100%; height: 100%; object-fit: cover; }
+    .news-visual .no-image { height: 100%; display: flex; align-items: center; justify-content: center; background: #17212b; color: #5eead4; font-size: 30px; }
+    .news-check { position: absolute; top: 10px; left: 10px; z-index: 2; width: 19px; height: 19px; accent-color: #0d9488; }
+    .news-body { padding: 14px; }
+    .news-source { font-size: 11px; color: #087f8c; margin-bottom: 7px; }
+    .news-title { font-size: 15px; line-height: 1.45; color: #17212b; font-weight: 650; height: 44px; overflow: hidden; }
+    .news-summary { margin-top: 8px; color: #74818b; font-size: 12px; line-height: 1.55; height: 56px; overflow: hidden; }
+    .diagnostics { margin-top: 12px; padding: 10px 12px; background: #f7f9fa; border-radius: 5px; font-size: 12px; color: #66737d; }
+    @media (max-width: 1050px) { .news-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 650px) { .news-gallery { grid-template-columns: 1fr; } .search-command { grid-template-columns: 1fr; } }
+</style>
+{% end %}
+
+{% block body %}
+<div class="layui-layout layui-layout-admin admin-shell">
+    <div class="layui-header"><div class="layui-logo">DataFinderAgentOS</div><div class="header-right"><span class="username">{{ username }}</span><form method="post" action="/admin/logout" style="display:inline;">{% module xsrf_form_html() %}<button class="layui-btn layui-btn-sm layui-btn-primary" type="submit">退出</button></form></div></div>
+    <div class="layui-side"><div class="layui-side-scroll">{% include "_navigation.html" %}</div></div>
+    <main class="layui-body"><div class="watch-page fade-in">
+        <section class="watch-hero">
+            <h1>数据瞭望</h1><p>基于启用的 RequestHeaders 规则并行检索互联网公开数据</p>
+            <div class="search-command"><input id="keyword" maxlength="80" placeholder="输入关键词，例如：人工智能、低空经济"><button id="collectBtn" class="collect-button" onclick="collectData()">开始采集</button></div>
+        </section>
+        <section class="watch-zone"><div class="zone-head"><div><span class="zone-code">B</span><span class="zone-title">瞭源规则库</span></div><span class="admin-page-subtitle">仅启用并勾选的规则参与采集</span></div>
+            <div class="source-grid">
+            {% for source in sources %}
+                <label class="source-option"><input type="checkbox" name="source" value="{{ source['id'] }}" checked><div><div class="source-name">{{ source['name'] }}</div><div class="source-meta">{{ '百度新闻解析器' if source['parser_type'] == 'baidu_news' else '通用网页解析器' }} · {{ source['method'] }} · {{ {'success':'测试成功','blocked':'受到限制','error':'测试失败','untested':'尚未测试'}.get(source['last_test_status'], source['last_test_status']) }}</div></div></label>
+            {% end %}
+            {% if not sources %}<div class="admin-empty">没有可用瞭源，请先前往瞭源管理新增规则。</div>{% end %}
+            </div>
+        </section>
+        <section class="watch-zone"><div class="zone-head"><div><span class="zone-code">C</span><span class="zone-title">采集结果</span><span id="resultCount" class="admin-page-subtitle"></span></div><div class="result-actions"><button class="layui-btn layui-btn-sm layui-btn-primary" onclick="selectAllResults()">全选</button><button class="layui-btn layui-btn-sm" style="background:#087f8c" onclick="saveSelected()">保存到数据仓库</button></div></div>
+            <div id="gallery" class="news-gallery"><div class="admin-empty" style="grid-column:1/-1">输入关键词并开始采集，结果将以 3 列橱窗展示。</div></div>
+            <div id="diagnostics" class="diagnostics" style="display:none"></div>
+        </section>
+    </div></main>
+    <div class="layui-footer">DataFinderAgentOS · 数据瞭望子系统</div>
+</div>
+{% end %}
+
+{% block scripts %}
+<script>
+var collectionResults = [];
+function selectedSourceIds(){ return Array.from(document.querySelectorAll('input[name="source"]:checked')).map(function(el){return Number(el.value);}); }
+function renderResults(){
+    var gallery=document.getElementById('gallery');
+    document.getElementById('resultCount').textContent=collectionResults.length ? ' · '+collectionResults.length+' 条' : '';
+    if(!collectionResults.length){ gallery.innerHTML='<div class="admin-empty" style="grid-column:1/-1">本次没有可展示的数据。</div>'; return; }
+    gallery.innerHTML=collectionResults.map(function(item,index){
+        var image=item.image_url ? '<img src="'+AdminUI.escapeHtml(item.image_url)+'" alt="" loading="lazy" referrerpolicy="no-referrer">' : '<div class="no-image"><i class="layui-icon layui-icon-read"></i></div>';
+        return '<article class="news-card" id="card-'+index+'"><div class="news-visual"><input class="news-check" type="checkbox" data-index="'+index+'" onchange="toggleCard('+index+')">'+image+'</div><div class="news-body"><div class="news-source">'+AdminUI.escapeHtml(item.source_name)+' · '+AdminUI.escapeHtml(item.publisher||'来源待解析')+'</div><a class="news-title" href="'+AdminUI.escapeHtml(item.url)+'" target="_blank" rel="noopener">'+AdminUI.escapeHtml(item.title)+'</a><div class="news-summary">'+AdminUI.escapeHtml(item.summary||'暂无摘要')+'</div></div></article>';
+    }).join('');
+    gallery.querySelectorAll('.news-visual img').forEach(function(img){img.addEventListener('error',function(){img.parentElement.innerHTML='<div class="no-image"><i class="layui-icon layui-icon-read"></i></div>';});});
+}
+function toggleCard(index){ var box=document.querySelector('.news-check[data-index="'+index+'"]'); document.getElementById('card-'+index).classList.toggle('selected',box.checked); }
+function selectAllResults(){ document.querySelectorAll('.news-check').forEach(function(box){box.checked=true;toggleCard(Number(box.dataset.index));}); }
+async function collectData(){
+    var keyword=document.getElementById('keyword').value.trim(), btn=document.getElementById('collectBtn');
+    if(!keyword){layui.layer.msg('请输入采集关键词');return;} var ids=selectedSourceIds(); if(!ids.length){layui.layer.msg('请至少选择一个瞭源');return;}
+    btn.disabled=true;btn.textContent='采集中...'; document.getElementById('gallery').innerHTML='<div class="admin-empty" style="grid-column:1/-1">正在连接瞭源并解析数据...</div>';
+    try{var response=await fetch('/admin/observatory/collect',{method:'POST',headers:{'Content-Type':'application/json','X-Xsrftoken':AdminUI.xsrfToken()},body:JSON.stringify({keyword:keyword,source_ids:ids})});var data=await response.json();collectionResults=data.items||[];renderResults();var diag=document.getElementById('diagnostics');diag.style.display='block';diag.innerHTML=(data.diagnostics||[]).map(function(d){return '<div class="status-dot '+(d.ok?'success':'blocked')+'"><b>'+AdminUI.escapeHtml(d.source)+'</b>：'+AdminUI.escapeHtml(d.message)+'</div>';}).join('');if(!data.ok)layui.layer.msg(data.message||'采集失败');}catch(error){collectionResults=[];renderResults();layui.layer.msg('采集请求失败：'+error.message);}finally{btn.disabled=false;btn.textContent='开始采集';}
+}
+async function saveSelected(){var items=Array.from(document.querySelectorAll('.news-check:checked')).map(function(box){return collectionResults[Number(box.dataset.index)];});if(!items.length){layui.layer.msg('请先选择要保存的数据');return;}var response=await fetch('/admin/warehouse/save',{method:'POST',headers:{'Content-Type':'application/json','X-Xsrftoken':AdminUI.xsrfToken()},body:JSON.stringify({items:items})});var data=await response.json();layui.layer.msg(data.message||'保存完成');}
+document.getElementById('keyword').addEventListener('keydown',function(e){if(e.key==='Enter')collectData();});
+</script>
+{% end %}
