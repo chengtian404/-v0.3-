@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 瞭望与问数系统 (DataFinderAgentOS) v0.1
 
 基于 Tornado 异步 Web 框架构建的轻量级数据查询与分析平台。
@@ -79,3 +80,7 @@ DataFinderAgentOS/
 ```powershell
 python test/test_user_models.py
 ```
+=======
+# -v0.3-
+智能瞭望与智能问数系统v0.3版
+>>>>>>> cf259a68bd455885c96dd573da9102fb728df57c
